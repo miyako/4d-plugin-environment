@@ -1,0 +1,21 @@
+{
+    "name": "environment",
+    "id": 20000,
+    "commands": [
+        {
+            "theme": "environment",
+            "syntax": "Expand environment string(&T):T",
+            "threadSafe": true
+        },
+        {
+            "theme": "environment",
+            "syntax": "Get environment variable(&T):T",
+            "threadSafe": true
+        },
+        {
+            "theme": "environment",
+            "syntax": "PUT ENVIRONMENT VARIABLE(&T;&T)",
+            "threadSafe": true
+        }
+    ]
+}
