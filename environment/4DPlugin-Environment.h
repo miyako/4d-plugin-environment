@@ -14,7 +14,9 @@
 #include "4DPluginAPI.h"
 
 #include <mutex>
-
+#if VERSIONWIN
+#include "shlwapi.h"
+#endif
 #include "C_TEXT.h"
 
 #pragma mark -

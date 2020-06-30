@@ -1,4 +1,7 @@
 //%attributes = {}
+$up:=Expand environment string ("%userprofile%")
+$path:=Get environment variable ("BAZEL_VC")
+
 $cn:=Expand environment string ("%SystemRoot%")
 
 $path:=Get environment variable ("PATH")
