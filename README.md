@@ -9,5 +9,7 @@ Get, set, expand (windows only) environment variables.
 
 * Catch ``WM_SETTINGCHANGE`` window message and read values from the registry.
 
-* ``HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment``
-* ``HKCU\Environment``
+  * ``HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment``
+  * ``HKCU\Environment``
+
+Probably only functional in MDI mode.
