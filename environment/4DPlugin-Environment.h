@@ -24,5 +24,6 @@
 void Expand_environment_string(PA_PluginParameters params);
 void Get_environment_variable(PA_PluginParameters params);
 void PUT_ENVIRONMENT_VARIABLE(PA_PluginParameters params);
+void REGISTER_ENVIRONMENT_WINDOW(PA_PluginParameters params);
 
 #endif /* PLUGIN_ENVIRONMENT_H */

@@ -144,8 +144,8 @@
 		"height": 762
 	},
 	"Sources/Methods/TEST.4dm": {
-		"left": 92,
-		"top": 394,
+		"left": -13,
+		"top": 210,
 		"width": 877,
 		"height": 633
 	},
@@ -156,9 +156,21 @@
 		"height": 662
 	},
 	"Sources/Methods/update_manifest_json.4dm": {
-		"left": 173,
-		"top": 458,
+		"left": -111,
+		"top": 411,
 		"width": 1129,
 		"height": 787
+	},
+	"Sources/Forms/TEST/ObjectMethods/Button.4dm": {
+		"left": 92,
+		"top": 394,
+		"width": 877,
+		"height": 633
+	},
+	"Sources/Methods/TEST_SDI.4dm": {
+		"left": 92,
+		"top": 394,
+		"width": 877,
+		"height": 633
 	}
 }

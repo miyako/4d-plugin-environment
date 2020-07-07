@@ -13,11 +13,13 @@
 #pragma mark -
 
 static std::mutex gMutexEnvironment;
-
+static std::mutex gMutexSDI;
 static bool wasMDI;
 
 #if VERSIONWIN
 static WNDPROC originalWndProc = NULL;
+static HWND gSDI = NULL;
+static WNDPROC originalWndProcSDI = NULL;
 #endif
 
 static bool isSDI() {
@@ -209,6 +211,36 @@ LRESULT CALLBACK customWndProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
     
     return CallWindowProc(originalWndProc, wnd, msg, wp, lp);
 }
+
+void OnExit_sdi() {
+
+#if VERSIONWIN
+	std::lock_guard<std::mutex> guard(gMutexSDI);
+
+	if (gSDI) {
+		SetWindowLongPtr(gSDI, GWLP_WNDPROC, (LONG_PTR)originalWndProcSDI);
+		gSDI = NULL;
+	}
+#endif
+}
+
+LRESULT CALLBACK customWndProc_sdi(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
+
+    switch (msg) {
+        case WM_CLOSE:
+            OnExit_sdi();
+            break;
+        case WM_SETTINGCHANGE:
+            if((std::wstring((const wchar_t *)lp)) == L"Environment") {
+                refresh_environ();
+            }
+            break;
+        default:
+            break;
+    }
+    
+    return CallWindowProc(originalWndProcSDI, wnd, msg, wp, lp);
+}
 #endif
 
 void OnStartup() {
@@ -252,21 +284,24 @@ void PluginMain(PA_long32 selector, PA_PluginParameters params) {
                 if (wasMDI) {
                     PA_RunInMainProcess((PA_RunInMainProcessProcPtr)OnExit, NULL);
                 }
+                PA_RunInMainProcess((PA_RunInMainProcessProcPtr)OnExit_sdi, NULL);
 #endif
                 break;
                 
 			// --- Environment
             
-			case 1 :
-				Expand_environment_string(params);
-				break;
-			case 2 :
-				Get_environment_variable(params);
-				break;
-			case 3 :
-				PUT_ENVIRONMENT_VARIABLE(params);
-				break;
-
+            case 1 :
+                Expand_environment_string(params);
+                break;
+            case 2 :
+                Get_environment_variable(params);
+                break;
+            case 3 :
+                PUT_ENVIRONMENT_VARIABLE(params);
+                break;
+            case 4 :
+                REGISTER_ENVIRONMENT_WINDOW(params);
+                break;
         }
 
 	}
@@ -378,3 +413,22 @@ void PUT_ENVIRONMENT_VARIABLE(PA_PluginParameters params) {
     }
 }
 
+void REGISTER_ENVIRONMENT_WINDOW(PA_PluginParameters params) {
+
+#if VERSIONWIN
+	
+    HWND sdi = reinterpret_cast<HWND>(PA_GetHWND(reinterpret_cast<PA_WindowRef>(PA_GetLongParameter(params, 1))));
+    
+    if (sdi) {
+        
+        OnExit_sdi();
+        
+        originalWndProcSDI = (WNDPROC)GetWindowLongPtr(sdi, GWLP_WNDPROC);
+        SetWindowLongPtr(sdi, GWLP_WNDPROC, (LONG_PTR)customWndProc_sdi);
+        
+        std::lock_guard<std::mutex> guard(gMutexSDI);
+        
+        gSDI = sdi;
+    }
+#endif
+}

@@ -16,6 +16,11 @@
             "theme": "environment",
             "syntax": "PUT ENVIRONMENT VARIABLE(&T;&T)",
             "threadSafe": true
+        },
+        {
+            "theme": "environment",
+            "syntax": "REGISTER ENVIRONMENT WINDOW(&L)",
+            "threadSafe": true
         }
     ]
 }

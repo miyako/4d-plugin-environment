@@ -8,7 +8,7 @@
 		<dict>
 			<key>hash</key>
 			<data>
-			esAw8N1CNe3IqlOp5++7QI9i1M4=
+			9OGNvV69AqEfx0hNZ5a90ELZQ+E=
 			</data>
 			<key>optional</key>
 			<true/>
@@ -31,7 +31,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			HcrDB9oF0KWc5nKHat1MlqcpJPSwuWBnnK5NK6iXMKE=
+			gao8aVtAtdjKB7qxfqmH91vQ4O3ye7VxvY9K690B3ME=
 			</data>
 			<key>optional</key>
 			<true/>
@@ -47,21 +47,21 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			Je5NEZS/04mjdSHvKuNvUjS5OeobugvDp7zMPCUcaws=
+			OjkBh1WyKm+KAuOjgSR7Wq29gKuPyfWBaAUX8BIHP54=
 			</data>
 		</dict>
 		<key>Windows64/Environment.4DX</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			5lMwoiiTVz88TU6fpgcXSFu935vecKX0EzxBintlF2A=
+			MSQHU+zyTATsLEArWK0yv/z1+vLBOroxOhAUblVxfeo=
 			</data>
 		</dict>
 		<key>manifest.json</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			e6+Nz6YafBPKHoYyJvRyTOYTrus=
+			O+SnSNNTVJPFmF7SEmRozrjNkT4=
 			</data>
 			<key>requirement</key>
 			<string>identifier manifest and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = Y69CWUC25B</string>
