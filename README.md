@@ -11,5 +11,3 @@ Get, set, expand (windows only) environment variables.
 
   * ``HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment``
   * ``HKCU\Environment``
-
-Probably only functional in MDI mode.
