@@ -194,6 +194,22 @@ static void refresh_environ() {
 		get_env_from_reg(hKey);
 		RegCloseKey(hKey);
 	}
+    
+    hKeyParent = HKEY_CURRENT_USER;
+    valueName = L"Volatile Environment";
+
+    Ret = RegOpenKeyEx(
+        hKeyParent,
+        valueName,
+        0,
+        KEY_READ | KEY_QUERY_VALUE | KEY_WOW64_64KEY,
+        &hKey
+    );
+
+    if (Ret == ERROR_SUCCESS) {
+        get_env_from_reg(hKey);
+        RegCloseKey(hKey);
+    }
 
 }
 
