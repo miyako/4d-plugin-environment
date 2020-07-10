@@ -21,5 +21,7 @@ Get, set, expand (windows only) environment variables.
 
   * ``HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment``
   * ``HKCU\Environment``
-
+  * ``HKCU\Volatile Environment``
+  * ``HKCU\Volatile Environment\{number}``
+  
 [miyako.github.io](https://miyako.github.io/2020/06/26/4d-environment.html)
