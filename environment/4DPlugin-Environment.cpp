@@ -159,6 +159,77 @@ static void get_env_from_reg(HKEY hKey) {
 	}
 }
 
+static void get_env_subkeys(HKEY hKey) {
+
+	DWORD Ret;
+
+	TCHAR    achKey[MAX_KEY_LENGTH];   // buffer for subkey name
+	DWORD    cbName;                   // size of name string 
+	TCHAR    achClass[MAX_PATH] = TEXT("");  // buffer for class name 
+	DWORD    cchClassName = MAX_PATH;  // size of class string 
+	DWORD    cSubKeys = 0;               // number of subkeys 
+	DWORD    cbMaxSubKey;              // longest subkey size 
+	DWORD    cchMaxClass;              // longest class string 
+	DWORD    cValues;              // number of values for key 
+	DWORD    cchMaxValue;          // longest value name 
+	DWORD    cbMaxValueData;       // longest value data 
+	DWORD    cbSecurityDescriptor; // size of security descriptor 
+	FILETIME ftLastWriteTime;      // last write time 
+
+	Ret = RegQueryInfoKey(
+		hKey,                    // key handle 
+		achClass,                // buffer for class name 
+		&cchClassName,           // size of class string 
+		NULL,                    // reserved 
+		&cSubKeys,               // number of subkeys 
+		&cbMaxSubKey,            // longest subkey size 
+		&cchMaxClass,            // longest class string 
+		&cValues,                // number of values for this key 
+		&cchMaxValue,            // longest value name 
+		&cbMaxValueData,         // longest value data 
+		&cbSecurityDescriptor,   // security descriptor 
+		&ftLastWriteTime);       // last write time 
+
+	DWORD	type;
+	DWORD	_name_len;
+	DWORD	value_len;
+
+	std::vector<unsigned char>_name_buf(MAX_VALUE_LENGTH);
+	std::vector<unsigned char>value_buf(MAX_VALUE_LENGTH);
+
+	if (cSubKeys) {
+		for (DWORD i = 0; i<cSubKeys; i++) {
+			_name_len = MAX_VALUE_LENGTH;
+			value_len = MAX_VALUE_LENGTH;
+
+			Ret = RegEnumKeyExW(hKey, i,
+				(LPWSTR)&_name_buf[0],
+				&_name_len,
+				NULL, NULL, NULL,
+				&ftLastWriteTime);
+
+			if (Ret == ERROR_SUCCESS) {
+				std::wstring _name = std::wstring((const wchar_t *)&_name_buf[0], _name_len);
+
+				HKEY hSubKey;
+
+				Ret = RegOpenKeyEx(
+					hKey,
+					_name.c_str(),
+					0,
+					KEY_READ | KEY_QUERY_VALUE | KEY_WOW64_64KEY,
+					&hSubKey
+				);
+
+				if (Ret == ERROR_SUCCESS) {
+					get_env_from_reg(hSubKey);
+					RegCloseKey(hSubKey);
+				}
+			}
+		}
+	}
+}
+
 static void refresh_environ() {
 
 	HKEY hKeyParent = HKEY_LOCAL_MACHINE;
@@ -208,6 +279,7 @@ static void refresh_environ() {
 
     if (Ret == ERROR_SUCCESS) {
         get_env_from_reg(hKey);
+		get_env_subkeys(hKey);
         RegCloseKey(hKey);
     }
 
