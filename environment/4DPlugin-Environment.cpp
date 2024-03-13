@@ -460,7 +460,11 @@ void Get_environment_variable(PA_PluginParameters params) {
     CUTF8String name, value;
     Param1.copyUTF8String(&name);
     
-    value = CUTF8String((const uint8_t *)getenv((const char *)name.c_str()));
+    const char *s = getenv((const char *)name.c_str());
+    if(s) {
+        value = CUTF8String((const uint8_t *)s, strlen(s));
+    }
+                                               
     returnValue.setUTF8String(&value);
     
 #endif
