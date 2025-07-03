@@ -14,9 +14,9 @@
 
 static std::mutex gMutexEnvironment;
 static std::mutex gMutexSDI;
-static bool wasMDI;
 
 #if VERSIONWIN
+static bool wasMDI = false;
 static WNDPROC originalWndProc = NULL;
 static HWND gSDI = NULL;
 static WNDPROC originalWndProcSDI = NULL;
@@ -367,6 +367,7 @@ void PluginMain(PA_long32 selector, PA_PluginParameters params) {
                 break;
                 
             case kDeinitPlugin :
+            case kServerDeinitPlugin:
 #if VERSIONWIN
                 //too late to call isSDI() which depends on PA_ExecuteCommandByID
                 if (wasMDI) {
