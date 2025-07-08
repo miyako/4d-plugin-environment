@@ -12,18 +12,13 @@
 #define PLUGIN_ENVIRONMENT_H
 
 #include "4DPluginAPI.h"
-
-#include <mutex>
-#if VERSIONWIN
-#include "shlwapi.h"
-#endif
 #include "C_TEXT.h"
 
 #pragma mark -
 
-void Expand_environment_string(PA_PluginParameters params);
-void Get_environment_variable(PA_PluginParameters params);
-void PUT_ENVIRONMENT_VARIABLE(PA_PluginParameters params);
-void REGISTER_ENVIRONMENT_WINDOW(PA_PluginParameters params);
+static void Expand_environment_string(PA_PluginParameters params);
+static void Get_environment_variable(PA_PluginParameters params);
+static void PUT_ENVIRONMENT_VARIABLE(PA_PluginParameters params);
+static void REGISTER_ENVIRONMENT_WINDOW(PA_PluginParameters params);
 
 #endif /* PLUGIN_ENVIRONMENT_H */

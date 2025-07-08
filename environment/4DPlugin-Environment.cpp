@@ -12,371 +12,12 @@
 
 #pragma mark -
 
-static std::mutex gMutexEnvironment;
-static std::mutex gMutexSDI;
-
-#if VERSIONWIN
-static bool wasMDI = false;
-static WNDPROC originalWndProc = NULL;
-static HWND gSDI = NULL;
-static WNDPROC originalWndProcSDI = NULL;
-#endif
-
-static bool isSDI() {
-    
-#if VERSIONWIN
-    
-    PA_Variable args[5];
-
-    args[0] = PA_CreateVariable(eVK_Longint);
-    args[1] = PA_CreateVariable(eVK_Longint);
-    args[2] = PA_CreateVariable(eVK_Longint);
-    args[3] = PA_CreateVariable(eVK_Longint);
-    args[4] = PA_CreateVariable(eVK_Longint);
-    
-    PA_SetLongintVariable(&args[4], (PA_long32)-1);
-
-    PA_ExecuteCommandByID(443 /*GET WINDOW RECT*/, args, 5);
-
-    return (
-       (PA_GetLongintVariable(args[0]) == 0)
-    && (PA_GetLongintVariable(args[1]) == 0)
-    && (PA_GetLongintVariable(args[2]) == 0)
-    && (PA_GetLongintVariable(args[3]) == 0));
-    
-    /* the variable belongs to 4D, no need to PA_ClearVariable (I think) */
-
-#endif
-    
-    return false;
-}
-
-#if VERSIONWIN
-
-static HWND getMDI() {
-    
-    wasMDI = true;
-
-    PA_ulong32 version = PA_Get4DVersion();
-    
-    if (version >= 16)
-        return (HWND)PA_GetMainWindowHWND();
-
-    // Altura MAc2Win does not allow multiple instances of the same app
-    // we can assume that the window class is the folder name of the application
-    
-    HWND mdi = NULL;
-    wchar_t path[_MAX_PATH] = { 0 };
-    wchar_t * applicationPath = wcscpy(path, (const wchar_t *)PA_GetApplicationFullPath().fString);
-    
-    //remove file name (4D.exe)
-    PathRemoveFileSpec(path);
-    //check instance as well, to be sure
-    HINSTANCE h = (HINSTANCE)PA_Get4DHInstance();
-    
-    do {
-        mdi = FindWindowEx(NULL, mdi, (LPCTSTR)path, NULL);
-        if (mdi)
-        {
-            if (h == (HINSTANCE)GetWindowLongPtr(mdi, GWLP_HINSTANCE))
-            {
-                break;
-            }
-        }
-    } while (mdi);
-    
-   return mdi;
-}
-#endif
-
-#if VERSIONWIN
-
-#include <tchar.h>
-
-#define MAX_KEY_LENGTH 255
-#define MAX_VALUE_LENGTH 32767
-
-static void get_env_from_reg(HKEY hKey) {
-
-	DWORD Ret;
-
-	TCHAR    achKey[MAX_KEY_LENGTH];   // buffer for subkey name
-	DWORD    cbName;                   // size of name string 
-	TCHAR    achClass[MAX_PATH] = TEXT("");  // buffer for class name 
-	DWORD    cchClassName = MAX_PATH;  // size of class string 
-	DWORD    cSubKeys = 0;               // number of subkeys 
-	DWORD    cbMaxSubKey;              // longest subkey size 
-	DWORD    cchMaxClass;              // longest class string 
-	DWORD    cValues;              // number of values for key 
-	DWORD    cchMaxValue;          // longest value name 
-	DWORD    cbMaxValueData;       // longest value data 
-	DWORD    cbSecurityDescriptor; // size of security descriptor 
-	FILETIME ftLastWriteTime;      // last write time 
-
-	Ret = RegQueryInfoKey(
-		hKey,                    // key handle 
-		achClass,                // buffer for class name 
-		&cchClassName,           // size of class string 
-		NULL,                    // reserved 
-		&cSubKeys,               // number of subkeys 
-		&cbMaxSubKey,            // longest subkey size 
-		&cchMaxClass,            // longest class string 
-		&cValues,                // number of values for this key 
-		&cchMaxValue,            // longest value name 
-		&cbMaxValueData,         // longest value data 
-		&cbSecurityDescriptor,   // security descriptor 
-		&ftLastWriteTime);       // last write time 
-
-	DWORD	type;
-	DWORD	_name_len;
-	DWORD	value_len;
-
-	std::vector<unsigned char>_name_buf(MAX_VALUE_LENGTH);
-	std::vector<unsigned char>value_buf(MAX_VALUE_LENGTH);
-
-	if (cValues) {
-		for (DWORD i = 0; i<cValues; i++) {
-			_name_len = MAX_VALUE_LENGTH;
-			value_len = MAX_VALUE_LENGTH;
-			Ret = RegEnumValue(hKey, i,
-				(LPWSTR)&_name_buf[0],
-				&_name_len,
-				0,
-				&type,
-				(BYTE *)&value_buf[0],
-				&value_len);
-			if (Ret == ERROR_SUCCESS) {
-				if ((type == REG_SZ) || (type == REG_EXPAND_SZ)) {
-					std::wstring value = std::wstring((const wchar_t *)&value_buf[0], value_len);
-					std::wstring _name = std::wstring((const wchar_t *)&_name_buf[0], _name_len);
-
-					std::lock_guard<std::mutex> guard(gMutexEnvironment);
-
-					_wputenv_s(_name.c_str(), value.c_str());
-				}
-			}
-		}
-	}
-}
-
-static void get_env_subkeys(HKEY hKey) {
-
-	DWORD Ret;
-
-	TCHAR    achKey[MAX_KEY_LENGTH];   // buffer for subkey name
-	DWORD    cbName;                   // size of name string 
-	TCHAR    achClass[MAX_PATH] = TEXT("");  // buffer for class name 
-	DWORD    cchClassName = MAX_PATH;  // size of class string 
-	DWORD    cSubKeys = 0;               // number of subkeys 
-	DWORD    cbMaxSubKey;              // longest subkey size 
-	DWORD    cchMaxClass;              // longest class string 
-	DWORD    cValues;              // number of values for key 
-	DWORD    cchMaxValue;          // longest value name 
-	DWORD    cbMaxValueData;       // longest value data 
-	DWORD    cbSecurityDescriptor; // size of security descriptor 
-	FILETIME ftLastWriteTime;      // last write time 
-
-	Ret = RegQueryInfoKey(
-		hKey,                    // key handle 
-		achClass,                // buffer for class name 
-		&cchClassName,           // size of class string 
-		NULL,                    // reserved 
-		&cSubKeys,               // number of subkeys 
-		&cbMaxSubKey,            // longest subkey size 
-		&cchMaxClass,            // longest class string 
-		&cValues,                // number of values for this key 
-		&cchMaxValue,            // longest value name 
-		&cbMaxValueData,         // longest value data 
-		&cbSecurityDescriptor,   // security descriptor 
-		&ftLastWriteTime);       // last write time 
-
-	DWORD	type;
-	DWORD	_name_len;
-	DWORD	value_len;
-
-	std::vector<unsigned char>_name_buf(MAX_VALUE_LENGTH);
-	std::vector<unsigned char>value_buf(MAX_VALUE_LENGTH);
-
-	if (cSubKeys) {
-		for (DWORD i = 0; i<cSubKeys; i++) {
-			_name_len = MAX_VALUE_LENGTH;
-			value_len = MAX_VALUE_LENGTH;
-
-			Ret = RegEnumKeyExW(hKey, i,
-				(LPWSTR)&_name_buf[0],
-				&_name_len,
-				NULL, NULL, NULL,
-				&ftLastWriteTime);
-
-			if (Ret == ERROR_SUCCESS) {
-				std::wstring _name = std::wstring((const wchar_t *)&_name_buf[0], _name_len);
-
-				HKEY hSubKey;
-
-				Ret = RegOpenKeyEx(
-					hKey,
-					_name.c_str(),
-					0,
-					KEY_READ | KEY_QUERY_VALUE | KEY_WOW64_64KEY,
-					&hSubKey
-				);
-
-				if (Ret == ERROR_SUCCESS) {
-					get_env_from_reg(hSubKey);
-					RegCloseKey(hSubKey);
-				}
-			}
-		}
-	}
-}
-
-static void refresh_environ() {
-
-	HKEY hKeyParent = HKEY_LOCAL_MACHINE;
-	PWCHAR valueName = L"SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment";
-	DWORD Ret;
-	HKEY hKey;
-
-	Ret = RegOpenKeyEx(
-		hKeyParent,
-		valueName,
-		0,
-		KEY_READ | KEY_QUERY_VALUE | KEY_WOW64_64KEY,
-		&hKey
-	);
-
-	if (Ret == ERROR_SUCCESS) {
-		get_env_from_reg(hKey);
-		RegCloseKey(hKey);
-	}
-
-	hKeyParent = HKEY_CURRENT_USER;
-	valueName = L"Environment";
-
-	Ret = RegOpenKeyEx(
-		hKeyParent,
-		valueName,
-		0,
-		KEY_READ | KEY_QUERY_VALUE | KEY_WOW64_64KEY,
-		&hKey
-	);
-
-	if (Ret == ERROR_SUCCESS) {
-		get_env_from_reg(hKey);
-		RegCloseKey(hKey);
-	}
-    
-    hKeyParent = HKEY_CURRENT_USER;
-    valueName = L"Volatile Environment";
-
-    Ret = RegOpenKeyEx(
-        hKeyParent,
-        valueName,
-        0,
-        KEY_READ | KEY_QUERY_VALUE | KEY_WOW64_64KEY,
-        &hKey
-    );
-
-    if (Ret == ERROR_SUCCESS) {
-        get_env_from_reg(hKey);
-		get_env_subkeys(hKey);
-        RegCloseKey(hKey);
-    }
-
-}
-
-LRESULT CALLBACK customWndProc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
-
-    switch (msg) {
-        case WM_SETTINGCHANGE:
-            if((std::wstring((const wchar_t *)lp)) == L"Environment") {
-				refresh_environ();
-            }
-            break;
-        default:
-            break;
-    }
-    
-    return CallWindowProc(originalWndProc, wnd, msg, wp, lp);
-}
-
-void OnExit_sdi() {
-
-#if VERSIONWIN
-	std::lock_guard<std::mutex> guard(gMutexSDI);
-
-	if (gSDI) {
-		SetWindowLongPtr(gSDI, GWLP_WNDPROC, (LONG_PTR)originalWndProcSDI);
-		gSDI = NULL;
-	}
-#endif
-}
-
-LRESULT CALLBACK customWndProc_sdi(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) {
-
-    switch (msg) {
-        case WM_CLOSE:
-            OnExit_sdi();
-            break;
-        case WM_SETTINGCHANGE:
-            if((std::wstring((const wchar_t *)lp)) == L"Environment") {
-                refresh_environ();
-            }
-            break;
-        default:
-            break;
-    }
-    
-    return CallWindowProc(originalWndProcSDI, wnd, msg, wp, lp);
-}
-#endif
-
-void OnStartup() {
-    
-#if VERSIONWIN
-    HWND mdi = getMDI();
-    if (mdi) {
-        originalWndProc = (WNDPROC)GetWindowLongPtr(mdi, GWLP_WNDPROC);
-        SetWindowLongPtr(mdi, GWLP_WNDPROC, (LONG_PTR)customWndProc);
-    }
-#endif
-}
-
-void OnExit() {
-
-#if VERSIONWIN
-    HWND mdi = getMDI();
-    if (mdi) {
-        SetWindowLongPtr(mdi, GWLP_WNDPROC, (LONG_PTR)originalWndProc);
-    }
-#endif
-}
-
 void PluginMain(PA_long32 selector, PA_PluginParameters params) {
     
 	try
 	{
         switch(selector)
         {
-                
-            case kInitPlugin :
-            case kServerInitPlugin :
-                if(!isSDI()) {
-                    PA_RunInMainProcess((PA_RunInMainProcessProcPtr)OnStartup, NULL);
-                }
-                break;
-                
-            case kDeinitPlugin :
-            case kServerDeinitPlugin:
-#if VERSIONWIN
-                //too late to call isSDI() which depends on PA_ExecuteCommandByID
-                if (wasMDI) {
-                    PA_RunInMainProcess((PA_RunInMainProcessProcPtr)OnExit, NULL);
-                }
-                PA_RunInMainProcess((PA_RunInMainProcessProcPtr)OnExit_sdi, NULL);
-#endif
-                break;
-                
 			// --- Environment
             
             case 1 :
@@ -392,7 +33,6 @@ void PluginMain(PA_long32 selector, PA_PluginParameters params) {
                 REGISTER_ENVIRONMENT_WINDOW(params);
                 break;
         }
-
 	}
 	catch(...)
 	{
@@ -402,7 +42,7 @@ void PluginMain(PA_long32 selector, PA_PluginParameters params) {
 
 #pragma mark -
 
-void Expand_environment_string(PA_PluginParameters params) {
+static void Expand_environment_string(PA_PluginParameters params) {
 
     sLONG_PTR *pResult = (sLONG_PTR *)params->fResult;
     
@@ -430,7 +70,7 @@ void Expand_environment_string(PA_PluginParameters params) {
     returnValue.setReturn(pResult);
 }
 
-void Get_environment_variable(PA_PluginParameters params) {
+static void Get_environment_variable(PA_PluginParameters params) {
 
     sLONG_PTR *pResult = (sLONG_PTR *)params->fResult;
     PackagePtr pParams = (PackagePtr)params->fParameters;
@@ -475,7 +115,7 @@ void Get_environment_variable(PA_PluginParameters params) {
     returnValue.setReturn(pResult);
 }
 
-void PUT_ENVIRONMENT_VARIABLE(PA_PluginParameters params) {
+static void PUT_ENVIRONMENT_VARIABLE(PA_PluginParameters params) {
 
     PackagePtr pParams = (PackagePtr)params->fParameters;
     
@@ -506,22 +146,6 @@ void PUT_ENVIRONMENT_VARIABLE(PA_PluginParameters params) {
     }
 }
 
-void REGISTER_ENVIRONMENT_WINDOW(PA_PluginParameters params) {
+static void REGISTER_ENVIRONMENT_WINDOW(PA_PluginParameters params) {
 
-#if VERSIONWIN
-	
-    HWND sdi = reinterpret_cast<HWND>(PA_GetHWND(reinterpret_cast<PA_WindowRef>(PA_GetLongParameter(params, 1))));
-    
-    if (sdi) {
-        
-        OnExit_sdi();
-        
-        originalWndProcSDI = (WNDPROC)GetWindowLongPtr(sdi, GWLP_WNDPROC);
-        SetWindowLongPtr(sdi, GWLP_WNDPROC, (LONG_PTR)customWndProc_sdi);
-        
-        std::lock_guard<std::mutex> guard(gMutexSDI);
-        
-        gSDI = sdi;
-    }
-#endif
 }
