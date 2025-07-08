@@ -83,9 +83,7 @@ static void Get_environment_variable(PA_PluginParameters params) {
     if(Param1.getUTF16Length()) {
     
 #if VERSIONWIN
-    
-    std::lock_guard<std::mutex> guard(gMutexEnvironment);
-    
+        
     size_t len = 0;
     wchar_t* buf = 0;
 
@@ -129,8 +127,6 @@ static void PUT_ENVIRONMENT_VARIABLE(PA_PluginParameters params) {
         
 #if VERSIONWIN
     
-    std::lock_guard<std::mutex> guard(gMutexEnvironment);
-
     _wputenv_s((const wchar_t *)Param1.getUTF16StringPtr(), (const wchar_t *)Param2.getUTF16StringPtr());
     
 #else
