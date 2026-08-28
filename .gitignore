@@ -4,3 +4,5 @@ environment/.vs/*
 environment/Objs/*
 environment/test/Plugins/Environment.bundle/Contents/Windows64/Environment.exp
 environment/test/Plugins/Environment.bundle/Contents/Windows64/Environment.lib
+build/*
+test/Project/DerivedData/*
