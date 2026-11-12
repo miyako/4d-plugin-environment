@@ -250,3 +250,12 @@ End if
 - `Get env var`: `len-1` / `wcslen` fix, mutex on macOS, null check
 - `Put env var`: reject `=` in name, mutex on macOS, null checks
 - `REGISTER ENVIRONMENT WINDOW`: whole operation under `gMutexSDI`, safe `OnExit_sdi_locked`, `SetWindowLongPtrW`/`CallWindowProcW`, handle `WM_NCDESTROY`
+
+## Ownership fix in the support helpers (dormant)
+
+`support/4DPlugin-JSON.cpp` is not compiled into this plugin (it is a shipped template) and the commands above are unaffected. Its object helpers leaked memory, now fixed ([#2](https://github.com/miyako/4d-plugin-environment/issues/2)):
+
+- The text and picture setters (`ob_set_s`, `ob_set_a`, `ob_set_p`) leaked an empty value.
+- The getters (`ob_get_a/b/n/c`) never released the fetched property value.
+
+Regression tests: [`tests/ownership/README.md`](tests/ownership/README.md).
